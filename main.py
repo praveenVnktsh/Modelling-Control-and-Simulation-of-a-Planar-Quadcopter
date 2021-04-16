@@ -96,11 +96,11 @@ if __name__ == "__main__":
     xval = []
     yval = []
     
-    quad.thrust =  quad.M * g
-    quad.tau = 0
+    quad.thrust =  1 + quad.M * g
+    quad.tau = 0.01
     plt.clf()
-    plt.ylim(-5, 100)
-    plt.xlim(-5, 5)
+    # plt.ylim(-5, 100)
+    # plt.xlim(-5, 5)
 
     for i in range(1000):
         state = quad.step(0.001)
@@ -112,6 +112,9 @@ if __name__ == "__main__":
         yval.append(state[2])
         
         # plt.pause(0.001)
-    plt.plot(xval, yval, c = 'r')
+    plt.plot(xval, label = 'X',  c = 'r')
+    plt.plot(yval, label = 'Y', c = 'b')
+    plt.grid()
+    plt.legend()
     # plt.show()
     plt.show(block = True)
