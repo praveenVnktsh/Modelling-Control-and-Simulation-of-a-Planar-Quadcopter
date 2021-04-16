@@ -80,6 +80,7 @@ class quadEnv(gym.Env):
 
     def cal_reward(self):
         reward = -self.distance/self.initdistance
+        return reward
 
     def is_done(self):
         inbounds = self.xlims[0] <= self.current[0] <= self.xlims[1] and self.ylims[0] <= self.current[1] <= self.ylims[1]
