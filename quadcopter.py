@@ -1,11 +1,11 @@
-import scipy
+import scipy.integrate
 import numpy as np
 import math
 
 g = 9.81
 class Quadcopter():
     
-    def __init__(self):
+    def __init__(self, state):
         I = 2.5e-4
 
         self.ode =  scipy.integrate.ode(self.state_dot).set_integrator('vode',nsteps=500,method='bdf')
@@ -18,7 +18,7 @@ class Quadcopter():
         self.invI = np.linalg.inv(self.I)
         self.M = 0.18
         self.L = 0.086
-        self.state = np.zeros(12)
+        self.state = state
         self.thrust = 0 
         self.tau = 0
 
@@ -69,16 +69,14 @@ class Quadcopter():
     def wrap_angle(self,val):
         return (( val + np.pi) % (2 * np.pi ) - np.pi )
 
-    def step(self, dt, print_position=True):
+    def step(self, dt, i, print_position=True):
         
-        # Ode step:
-        # [Waiting for Praveeen]
         self.ode.set_initial_value(self.state,0)
         self.state = self.ode.integrate(self.ode.t + dt)
         self.state[6:9] = self.wrap_angle(self.state[6:9])
 
         # position
-        if print_position:
+        if print_position and i % 100 == 0:
             print(f"Current Px:{self.state[0]:2f} Py:{self.state[1]:2f} Pz:{self.state[2]:2f}",
                 f"Current Vx:{self.state[3]:2f} Vy:{self.state[4]:2f} Vz:{self.state[5]:2f}",
                 f"Angle:{self.state[6]:2f},{self.state[7]:2f},{self.state[8]:2f}")
