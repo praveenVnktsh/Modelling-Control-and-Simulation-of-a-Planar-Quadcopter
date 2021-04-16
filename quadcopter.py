@@ -1,13 +1,14 @@
-import scipy.integrate
-import numpy as np
 import math
+import numpy as np
+import scipy.integrate
+import matplotlib.pyplot as plt
 
 g = 9.81
 
 
 class Quadcopter():
 
-    def __init__(self, state):
+    def __init__(self, state=np.zeros(12)):
         I = 2.5e-4
 
         self.ode = scipy.integrate.ode(self.state_dot).set_integrator(
@@ -76,12 +77,14 @@ class Quadcopter():
 
     def step(self, dt, i, print_position=True):
 
+        # Ode step:
+        # [Waiting for Praveeen]
         self.ode.set_initial_value(self.state, 0)
         self.state = self.ode.integrate(self.ode.t + dt)
         self.state[6:9] = self.wrap_angle(self.state[6:9])
 
         # position
-        if print_position and i % 100 == 0:
+        if print_position and (i % 100 == 0):
             print(f"Current Px:{self.state[0]:2f} Py:{self.state[1]:2f} Pz:{self.state[2]:2f}",
                   f"Current Vx:{self.state[3]:2f} Vy:{self.state[4]:2f} Vz:{self.state[5]:2f}",
                   f"Angle:{self.state[6]:2f},{self.state[7]:2f},{self.state[8]:2f}")
