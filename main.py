@@ -1,119 +1,88 @@
 import math
+from pid import PID
+from quadcopter import Quadcopter
 import numpy as np
 import scipy.integrate
 import matplotlib.pyplot as plt
-
-g = 9.81
-
-class Quadcopter():
-    
-    def __init__(self):
-        I = 2.5e-4
-
-        self.ode =  scipy.integrate.ode(self.state_dot).set_integrator('vode',nsteps=500,method='bdf')
-        self.I = np.array(
-            [
-                [I,0,0],
-                [0,I,0],
-                [0,0,I]
-            ])
-        self.invI = np.linalg.inv(self.I)
-        self.M = 0.18
-        self.L = 0.086
-        self.state = np.zeros(12)
-        self.thrust = 0 
-        self.tau = 0
-
-    def rotation_matrix(self,angles):
-            
-        ct = math.cos(angles[0])
-        cp = math.cos(angles[1])
-        cg = math.cos(angles[2])
-        st = math.sin(angles[0])
-        sp = math.sin(angles[1])
-        sg = math.sin(angles[2])
-        R_x = np.array([[1,0,0],[0,ct,-st],[0,st,ct]])
-        R_y = np.array([[cp,0,sp],[0,1,0],[-sp,0,cp]])
-        R_z = np.array([[cg,-sg,0],[sg,cg,0],[0,0,1]])
-        R = np.dot(R_z, np.dot( R_y, R_x ))
-        return R
-            
-    def state_dot(self):
-
-        state_dot = np.zeros(12)
-
-        # The velocities(t+1 x_dots equal the t x_dots)
-        state_dot[0] = self.state[3]
-        state_dot[1] = self.state[4]
-        state_dot[2] = self.state[5]
-
-        # The acceleration
-        x_dotdot = np.array([0,0,-g]) + np.dot(self.rotation_matrix(self.state[6:9]), np.array([0,0,self.thrust]))/self.M
-        state_dot[3] = x_dotdot[0]
-        state_dot[4] = x_dotdot[1]
-        state_dot[5] = x_dotdot[2]
-
-        # The angular rates(t+1 theta_dots equal the t theta_dots)
-        state_dot[6] = self.state[9]
-        state_dot[7] = self.state[10]
-        state_dot[8] = self.state[11]
-        
-        # The angular accelerations
-        omega = self.state[9:12]
-        tau = np.array([ 0, self.tau, 0])
-
-        omega_dot = np.dot(self.invI, (tau - np.cross(omega, np.dot(self.I,omega))))
-        state_dot[9] = omega_dot[0]
-        state_dot[10] = omega_dot[1]
-        state_dot[11] = omega_dot[2]
-        return state_dot
-
-    def wrap_angle(self,val):
-        return (( val + np.pi) % (2 * np.pi ) - np.pi )
-
-    def step(self, dt, print_position=True):
-        
-        # Ode step:
-        # [Waiting for Praveeen]
-        self.ode.set_initial_value(self.state,0)
-        self.state = self.ode.integrate(self.ode.t + dt)
-        self.state[6:9] = self.wrap_angle(self.state[6:9])
-
-        # position
-        if print_position:
-            print(f"Current Px:{self.state[0]:2f} Py:{self.state[1]:2f} Pz:{self.state[2]:2f}",
-                f"Current Vx:{self.state[3]:2f} Vy:{self.state[4]:2f} Vz:{self.state[5]:2f}",
-                f"Angle:{self.state[6]:2f},{self.state[7]:2f},{self.state[8]:2f}")
-        return self.state
+from tqdm import tqdm
 
 
 if __name__ == "__main__":
+    g = 9.81
+    timesteps = 1000
+    stepsize = 0.001
+    plot = False
+    initState = np.array([
+        0, 
+        0, 
+        -1, 
+        0, 
+        0, 
+        0,
+        0,
+        0.1,
+        0,
+        0,
+        0,
+        0
+    ], dtype = float)
+    quad = Quadcopter(state = initState)
 
-    quad = Quadcopter()
-    plt.figure(1)
+    pid = PID(dt = stepsize, Kp = [1.0, 10.0], Kd = [0.1, 2.30], Ki = [0.0, 0.0])
+    setpoint = np.array([0.0, 0.0])
+    pid.setSetpoint(setpoint)
+    
     plt.ion()
     
     xval = []
     yval = []
     
-    quad.thrust =  1 + quad.M * g
-    quad.tau = 0.01
-    plt.clf()
-    # plt.ylim(-5, 100)
-    # plt.xlim(-5, 5)
+    # quad.thrust =  1 + quad.M * g
+    # quad.tau = 0.001
 
-    for i in range(1000):
-        state = quad.step(0.001)
-
-        # if i > 10:
+    
+    ylims = (-10, 10)
+    xlims = (-2, 2)
+    if plot:
+        plt.figure(1)
+        plt.clf()
+        plt.xlim(xlims[0], xlims[1])
+        plt.ylim(ylims[0], ylims[1])
+        plt.show()
+        plt.grid()
+    thetaval = []
+    for i in range(timesteps):
+        state = quad.step(stepsize, i, True)
+        
+        # if i > 30:
         #     quad.tau = 0
 
-        xval.append(state[0])
-        yval.append(state[2])
+        pid.step(quad, state)
+
+        x = state[0]
+        y = state[2]
+
+        theta = state[7]
+
+        xval.append(x)
+        yval.append(y)
+        thetaval.append(theta)
+
+        if plot and i % 2  == 0: 
+            plt.clf()
+            plt.xlim(xlims[0], xlims[1])
+            plt.ylim(ylims[0], ylims[1])
+            plt.plot(xval, yval, label = 'X',  c = 'r')
+            plt.plot([-quad.L*np.cos(theta) + x, quad.L*np.cos(theta) + x], [y + quad.L*np.sin(theta), y - quad.L*np.sin(theta)], c= 'b', linewidth = 2.5)
+            plt.pause(0.001)
+
         
-        # plt.pause(0.001)
-    plt.plot(xval, label = 'X',  c = 'r')
-    plt.plot(yval, label = 'Y', c = 'b')
+
+
+    plt.figure(2)
+    time = np.linspace(0, timesteps*stepsize, num = timesteps)
+    plt.plot(time, yval, label = 'X',  c = 'r')
+    plt.plot(time, thetaval, label = 'Theta', c = 'b')
     plt.grid()
     plt.legend()
     # plt.show()
