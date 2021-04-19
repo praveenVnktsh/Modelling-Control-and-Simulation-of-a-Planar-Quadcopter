@@ -57,9 +57,9 @@ class Quadcopter():
         state_dot[5] = x_dotdot[2]
 
         # The angular rates(t+1 theta_dots equal the t theta_dots)
-        state_dot[6] = self.state[9]
+        state_dot[6] = 0*self.state[9]
         state_dot[7] = self.state[10]
-        state_dot[8] = self.state[11]
+        state_dot[8] = 0*self.state[11]
 
         # The angular accelerations
         omega = self.state[9:12]
@@ -67,15 +67,15 @@ class Quadcopter():
 
         omega_dot = np.dot(
             self.invI, (tau - np.cross(omega, np.dot(self.I, omega))))
-        state_dot[9] = omega_dot[0]
+        state_dot[9] = 0*omega_dot[0]
         state_dot[10] = omega_dot[1]
-        state_dot[11] = omega_dot[2]
+        state_dot[11] = 0*omega_dot[2]
         return state_dot
 
     def wrap_angle(self, val):
         return ((val + np.pi) % (2 * np.pi) - np.pi)
 
-    def step(self, dt, i, print_position=True):
+    def step(self, dt, i, print_position=False):
 
         # Ode step:
         # [Waiting for Praveeen]
@@ -84,7 +84,7 @@ class Quadcopter():
         self.state[6:9] = self.wrap_angle(self.state[6:9])
 
         # position
-        if print_position and (i % 100 == 0):
+        if print_position and (i % 10 == 0):
             print(f"Current Px:{self.state[0]:2f} Py:{self.state[1]:2f} Pz:{self.state[2]:2f}",
                   f"Current Vx:{self.state[3]:2f} Vy:{self.state[4]:2f} Vz:{self.state[5]:2f}",
                   f"Angle:{self.state[6]:2f},{self.state[7]:2f},{self.state[8]:2f}")
