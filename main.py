@@ -38,7 +38,6 @@ def plotGraph(i):
 
 if __name__ == "__main__":
     g = 9.81
-    timesteps = 3000
     stepsize = 0.005
     plot = True
     initState = np.array([
@@ -60,8 +59,8 @@ if __name__ == "__main__":
     # height, angle track, y track
 
     pid = PID(dt=stepsize, Kp=[2.0, 0.5, 0.1], Kd=[1.5, 0.3, 0.04])
-    setpoint = np.array([1, 2.5])
-    pid.setSetpoint(setpoint)
+    
+    
 
     plt.ion()
 
@@ -77,35 +76,43 @@ if __name__ == "__main__":
     thetaval = []
     prevx = 0
     prevy = 0
-    
-    for i in range(timesteps):
-        state = quad.step(stepsize, i, False)
+    complete = False
+    i = 0
+    setpoints = [
+        np.array([1, 2.5]),
+        np.array([0, 0.5]),
 
-        phi = pid.step(quad, state)
+    ]
+    for setpoint in setpoints:
+        complete = False
+        pid.setSetpoint(setpoint)
+        while not complete:
+            i += 1
+            state = quad.step(stepsize, i, False)
 
-        xval.append(state.x)
-        yval.append(state.y)
-        thetaval.append(state.theta)
-        
-        
+            phi, complete = pid.step(quad, state)
 
-        dist = np.sqrt(abs(prevx - state.x)**2 + abs(prevy - state.y)**2) > 0.1 
-        if i % 1000 == 0:
-            print(i)
-        if plot and (dist or i % 500 == 0):
-            print('Updating at', i)
+            xval.append(state.x)
+            yval.append(state.y)
+            thetaval.append(state.theta)
+            
+            
+
+            dist = np.sqrt(abs(prevx - state.x)**2 + abs(prevy - state.y)**2) > 0.1 
+            if i % 1000 == 0:
+                print(i)
+            if plot and (dist or i % 500 == 0):
+                print('Updating at', i)
 
 
-            plt.pause(0.001)
-            plotSim()
-            plotGraph(i)
+                plt.pause(0.001)
+                plotSim()
+                plotGraph(i)
 
-            prevx = state.x
-            prevy = state.y
+                prevx = state.x
+                prevy = state.y
 
 
     plotGraph(i)
-    # plotSim()
-    
-    # plt.show()
+    print('Simulation complete')
     plt.show(block=True)

@@ -43,5 +43,9 @@ class PID():
 
         self.prevstate = state
 
-        return phi
+        complete = False
+        if abs(yerror) + abs(xerror) < 0.02:
+            complete = True
+
+        return phi, complete
         # print(quad.thrust, quad.tau, phi, phiError, error, errordot)
