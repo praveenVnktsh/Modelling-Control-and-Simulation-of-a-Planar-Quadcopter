@@ -77,8 +77,6 @@ class Quadcopter():
 
     def step(self, dt, i, print_position=False):
 
-        # Ode step:
-        # [Waiting for Praveeen]
         self.ode.set_initial_value(self.state, 0)
         self.state = self.ode.integrate(self.ode.t + dt)
         self.state[6:9] = self.wrap_angle(self.state[6:9])
