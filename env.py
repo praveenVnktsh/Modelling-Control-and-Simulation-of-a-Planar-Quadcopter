@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 from quadcopter import Quadcopter
 from gym import spaces
 import numpy as np
-from stable_baselines.common.env_checker import check_env
+from stable_baselines3.common.env_checker import check_env
 from stable_baselines3 import PPO, A2C
 from stable_baselines3.common.env_util import make_vec_env
 import msvcrt
@@ -16,6 +16,7 @@ class quadEnv(gym.Env):
         super(quadEnv, self).__init__()
 
         assert(len(position) == 2)
+        
         self.quad = Quadcopter()
         self.quad.state[0] = position[0]
         self.quad.state[2] = position[1]
@@ -95,8 +96,7 @@ class quadEnv(gym.Env):
         pos_control = self.distance <= self.sse
         speed_control = np.linalg.norm(state[3:6]) <= self.vsse
         angle_control = -np.pi/2 <= state[7] <= np.pi/2
-        inbounds = self.xlims[0] <= self.current[0] <= self.xlims[1] and self.ylims[
-            0] <= self.current[1] <= self.ylims[1] and angle_control
+        inbounds = self.xlims[0] <= self.current[0] <= self.xlims[1] and self.ylims[0] <= self.current[1] <= self.ylims[1] and angle_control
 
         return (pos_control and speed_control) or self.currentstep >= self.timesteps or not inbounds, inbounds, pos_control
 
