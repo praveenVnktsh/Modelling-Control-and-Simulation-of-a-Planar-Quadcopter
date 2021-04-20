@@ -5,6 +5,16 @@ import matplotlib.pyplot as plt
 
 g = 9.81
 
+class State():
+
+    def __init__(self, state = np.zeros(6)):
+        self.x = state[0]
+        self.y = state[1]
+        self.theta = state[2]
+        self.xdot = state[3]
+        self.ydot = state[4]
+        self.thetadot = state[5]
+
 
 class Quadcopter():
 
@@ -83,10 +93,20 @@ class Quadcopter():
 
         # position
         if print_position and (i % 10 == 0):
-            print(f"Current Px:{self.state[0]:2f} Py:{self.state[1]:2f} Pz:{self.state[2]:2f}",
-                  f"Current Vx:{self.state[3]:2f} Vy:{self.state[4]:2f} Vz:{self.state[5]:2f}",
-                  f"Angle:{self.state[6]:2f},{self.state[7]:2f},{self.state[8]:2f}")
-        return self.state
+            print(f"Current Px:{self.state[0]:2f} Pz:{self.state[2]:2f}",
+                  f"Current Vx:{self.state[3]:2f} Vz:{self.state[5]:2f}",
+                  f"Angle:{self.state[7]:2f}", f"Angle rate:{self.state[10]:2f}", )
+        state = np.array(
+            [
+                self.state[0], 
+                self.state[2], 
+                self.state[7],
+                self.state[3], 
+                self.state[5], 
+                self.state[10]
+            ]
+        )
+        return State(state)
 
 
 if __name__ == "__main__":
@@ -105,15 +125,10 @@ if __name__ == "__main__":
     # plt.xlim(-5, 5)
 
     for i in range(1000):
-        state = quad.step(0.001)
+        state = quad.step(0.001, i)
+        xval.append(state.x)
+        yval.append(state.y)
 
-        # if i > 10:
-        #     quad.tau = 0
-
-        xval.append(state[0])
-        yval.append(state[2])
-
-        # plt.pause(0.001)
     plt.plot(xval, label='X',  c='r')
     plt.plot(yval, label='Y', c='b')
     plt.grid()
