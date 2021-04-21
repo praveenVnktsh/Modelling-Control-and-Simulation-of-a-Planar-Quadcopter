@@ -8,13 +8,20 @@ g = 9.81
 
 class State():
 
-    def __init__(self, state=np.zeros(6)):
+    def __init__(self, state=np.zeros(12)):
+
         self.x = state[0]
-        self.y = state[1]
-        self.theta = state[2]
+        self.y = state[2]
+        self.theta = state[7]
         self.xdot = state[3]
-        self.ydot = state[4]
-        self.thetadot = state[5]
+        self.ydot = state[5]
+        self.thetadot = state[10]
+
+    def getpos(self):
+        return np.array([self.x, self.y])
+
+    def getstate(self):
+        return np.array([self.x, self.y, self.theta, self.xdot, self.ydot, self.thetadot])
 
 
 class Quadcopter():
@@ -86,10 +93,8 @@ class Quadcopter():
     def wrap_angle(self, val):
         return ((val + np.pi) % (2 * np.pi) - np.pi)
 
-    def step(self, dt, print_position=True):
+    def step(self, dt, i, print_position=False):
 
-        # Ode step:
-        # [Waiting for Praveeen]
         self.ode.set_initial_value(self.state, 0)
         self.state = self.ode.integrate(self.ode.t + dt)
         self.state[6:9] = self.wrap_angle(self.state[6:9])
@@ -99,17 +104,17 @@ class Quadcopter():
             print(f"Current Px:{self.state[0]:2f} Pz:{self.state[2]:2f}",
                   f"Current Vx:{self.state[3]:2f} Vz:{self.state[5]:2f}",
                   f"Angle:{self.state[7]:2f}", f"Angle rate:{self.state[10]:2f}", )
-        state = np.array(
-            [
-                self.state[0],
-                self.state[2],
-                self.state[7],
-                self.state[3],
-                self.state[5],
-                self.state[10]
-            ]
-        )
-        return State(state)
+        # state = np.array(
+        #     [
+        #         self.state[0],
+        #         self.state[2],
+        #         self.state[7],
+        #         self.state[3],
+        #         self.state[5],
+        #         self.state[10]
+        #     ]
+        # )
+        return State(self.state)
 
 
 if __name__ == "__main__":

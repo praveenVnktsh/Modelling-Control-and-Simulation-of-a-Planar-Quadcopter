@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 
-
 def plotSim():
     global state
     plt.figure(1)
@@ -19,12 +18,11 @@ def plotSim():
     x = state.x
     y = state.y
     plt.plot([-quad.L*np.cos(theta) + x, quad.L*np.cos(theta) + x], [y +
-                                                                        quad.L*np.sin(theta), y - quad.L*np.sin(theta)], c='b', linewidth=2.5)
+                                                                     quad.L*np.sin(theta), y - quad.L*np.sin(theta)], c='b', linewidth=2.5)
 
 
 def plotGraph(i):
     time = np.linspace(0, len(yval)*i, num=len(yval))
-
 
     plt.figure(2)
     plt.clf()
@@ -54,19 +52,16 @@ if __name__ == "__main__":
         0,
         0
     ], dtype=float)
-    quad = Quadcopter(state=initState)
+    quad = Quadcopter()
 
     # height, angle track, y track
 
     pid = PID(dt=stepsize, Kp=[2.0, 0.5, 0.1], Kd=[1.5, 0.3, 0.04])
-    
-    
 
     plt.ion()
 
     xval = []
     yval = []
-
 
     ylims = (-10, 10)
     xlims = (-2, 2)
@@ -95,15 +90,13 @@ if __name__ == "__main__":
             xval.append(state.x)
             yval.append(state.y)
             thetaval.append(state.theta)
-            
-            
 
-            dist = np.sqrt(abs(prevx - state.x)**2 + abs(prevy - state.y)**2) > 0.1 
+            dist = np.sqrt(abs(prevx - state.x)**2 +
+                           abs(prevy - state.y)**2) > 0.1
             if i % 1000 == 0:
                 print(i)
             if plot and (dist or i % 500 == 0):
                 print('Updating at', i)
-
 
                 plt.pause(0.001)
                 plotSim()
@@ -111,7 +104,6 @@ if __name__ == "__main__":
 
                 prevx = state.x
                 prevy = state.y
-
 
     plotGraph(i)
     print('Simulation complete')

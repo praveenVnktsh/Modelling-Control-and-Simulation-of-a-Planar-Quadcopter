@@ -1,6 +1,7 @@
 import gym
 from matplotlib import pyplot as plt
-from quadcopter import Quadcopter
+from numpy.core.numeric import False_
+from quadcopter import Quadcopter, State
 from gym import spaces
 import numpy as np
 from stable_baselines3.common.env_checker import check_env
@@ -12,11 +13,11 @@ import msvcrt
 class quadEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, position=(0, 0), stepsize=0.01, timesteps=1000, sse=1, vsse=1, render=False):
+    def __init__(self, position=(0, 0), stepsize=0.01, timesteps=300, sse=1, vsse=1, render=False):
         super(quadEnv, self).__init__()
 
         assert(len(position) == 2)
-        
+
         self.quad = Quadcopter()
         self.quad.state[0] = position[0]
         self.quad.state[2] = position[1]
@@ -33,8 +34,8 @@ class quadEnv(gym.Env):
         self.ylims = (-2, 10)
         self.xlims = (-2, 2)
 
-        self.observation_space = spaces.Box(-200, 200, shape=(5,))
-        self.action_space = spaces.Box(0, 1, shape=(2,))
+        self.observation_space = spaces.Box(-200, 200, shape=(8,))
+        self.action_space = spaces.Box(-1, 1, shape=(2,))
 
     def reset(self):
         position = (0, 0)
@@ -78,25 +79,50 @@ class quadEnv(gym.Env):
 
             plt.show()
 
-        return self.getobs(self.quad.state)
+        return self.getobs(State(self.quad.state))
 
     def getobs(self, state):
-        x, y = state[0], state[2]
-        self.current = np.array([x, y])
+        self.current = state.getpos()
         distance = np.linalg.norm(self.goal-self.current)
         self.distance = distance
-        return np.concatenate([[self.distance], self.current, self.goal])
+        return np.concatenate([self.goal, state.getstate()])
 
-    def cal_reward(self):
-        reward = 2*np.exp(-self.distance/self.initdistance)
-        return reward
+    def cal_reward(self, state):
+
+        pos_control = self.distance <= self.sse
+        speed_control = np.linalg.norm([state.xdot, state.ydot]) <= self.vsse
+        angle_control = -np.pi/2 <= state.theta <= np.pi/2
+
+        inbounds = self.xlims[0] <= self.current[0] <= self.xlims[1] and self.ylims[
+            0] <= self.current[1] <= self.ylims[1]  # and angle_control
+
+        done = (
+            pos_control and speed_control) or self.currentstep >= self.timesteps or not inbounds
+        done = self.currentstep >= self.timesteps
+
+        reward = -1
+        if not inbounds:
+            reward += -10
+
+        elif pos_control:
+            reward += 100
+            if speed_control:
+                reward += 100
+        else:
+            reward += (np.exp(-self.distance/self.initdistance) -
+                       np.exp(-1))/(1-np.exp(-1))
+
+        # reward = 2*np.exp(-self.distance/self.initdistance)
+
+        return reward, done
 
     def is_done(self):
         state = self.quad.state
         pos_control = self.distance <= self.sse
         speed_control = np.linalg.norm(state[3:6]) <= self.vsse
         angle_control = -np.pi/2 <= state[7] <= np.pi/2
-        inbounds = self.xlims[0] <= self.current[0] <= self.xlims[1] and self.ylims[0] <= self.current[1] <= self.ylims[1] and angle_control
+        inbounds = self.xlims[0] <= self.current[0] <= self.xlims[1] and self.ylims[
+            0] <= self.current[1] <= self.ylims[1] and angle_control
 
         return (pos_control and speed_control) or self.currentstep >= self.timesteps or not inbounds, inbounds, pos_control
 
@@ -121,11 +147,13 @@ class quadEnv(gym.Env):
         Thrust = action[0]
         Tau = action[1]
 
-        # MIN_thrust, MAX_thrust = 0, 20
-        # MIN_tau, MAX_tau = -0.002, 0.002
+        MIN_thrust, MAX_thrust = 0, 20
+        MIN_tau, MAX_tau = -0.005, 0.005
 
-        # Thrust = MAX_thrust*Thrust + MIN_thrust
-        # Tau = MAX_tau*Tau + MIN_tau
+        Thrust = (Thrust + 1)*(MAX_thrust-MIN_thrust)/2
+
+        Tau = (Tau + 1)*(MAX_tau-MIN_tau)/2
+        # print(Thrust, Tau)
 
         self.quad.thrust = Thrust
         self.quad.tau = Tau
@@ -134,19 +162,20 @@ class quadEnv(gym.Env):
         self.currentstep += 1
 
         obs = self.getobs(state)
-        reward = self.cal_reward()
-        done, inbounds, pos = self.is_done()
-        if not inbounds:
-            reward = -50
-        elif done:
-            reward = 100
-        elif pos:
-            reward = 5
-        else:
-            reward = -1
+        reward, done = self.cal_reward(state)
+        # done, inbounds, pos = self.is_done()
+        # if not inbounds:
+        #     reward = -50
+        # elif done:
+        #     reward = 100
+        # elif pos:
+        #     reward = 5
+        # else:
+        #     reward = -1
         info = {
             "states": self.quad.state,
-            "distance": self.distance
+            "distance": self.distance,
+            "reward": reward
         }
 
         if self.render:
@@ -159,15 +188,15 @@ if __name__ == '__main__':
     env = quadEnv(render=True)
     # print("Current Error:", env.reset())
     train = False
-    check = True
+    check = False
 
     if train:
         n_cpu = 8
         env = make_vec_env(quadEnv, n_envs=n_cpu)
-        model = PPO("MlpPolicy", env, verbose=2,
-                    learning_rate=1e-3, n_steps=int(4096/n_cpu))
-        # model = PPO.load("hello.zip", env=env, learning_rate=2e-4)
-        model.learn(total_timesteps=1e5)
+        # model = PPO("MlpPolicy", env, verbose=2,
+        #             learning_rate=1e-4, n_steps=int(4096/n_cpu))
+        model = PPO.load("hello.zip", env=env, learning_rate=2e-4)
+        model.learn(total_timesteps=5e5)
         model.save("hello.zip")
     else:
         model = PPO.load("hello.zip")
@@ -180,6 +209,7 @@ if __name__ == '__main__':
             while True:
                 if not check:
                     action, _ = model.predict(obs)
+                    print(action)
                 else:
 
                     if msvcrt.kbhit():
