@@ -87,7 +87,7 @@ class Quadcopter():
 
         
         theta = self.state.theta
-        x = -self.state.x * scale + 250
+        x = self.state.x * scale + 250
         y = -self.state.y * scale + 450
 
         cv2.circle(self.img, (int(x), int(y)), 1, (0, 0, 255), thickness = - 1)
@@ -122,11 +122,36 @@ class Quadcopter():
 if __name__ == "__main__":
 
     quad = Quadcopter()
-    
-    quad.thrust = 1 + quad.M * g
-    quad.tau = 0.001
 
-    for i in range(1000):
-        state = quad.step(0.001)
-        quad.render()
+    inputval = 1 #+ quad.M * g
+    
+    quad.thrust =  quad.M * g
+    quad.tau = inputval
+    inputvals =  []
+    outputvals = []
+    outputxvals = []
+    timesteps = 2500
+    stepsize = 0.001
+
+    for i in range(timesteps):
+        state = quad.step(stepsize)
+        # quad.render()
+
+        inputvals.append(inputval)
+        outputvals.append(state.y)
+        outputxvals.append(state.x)
+
+    time = np.linspace(0, timesteps*stepsize, num = len(inputvals))
+    plt.plot(time, inputvals,  label = 'Thrust')
+    plt.title("Step Response")
+    plt.plot(time, outputvals,label = 'Y_out')
+    plt.plot(time, outputxvals,label = 'X_out')
+    plt.grid()
+    plt.xlabel('Time (s)')
+    plt.ylabel('Output')
+    plt.legend()
+
+    plt.show()
+
+
    

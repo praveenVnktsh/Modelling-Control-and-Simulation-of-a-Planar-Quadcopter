@@ -101,7 +101,7 @@ class quadEnv(gym.Env):
             pos_control and speed_control) or self.currentstep >= self.timesteps or not inbounds
         done = self.currentstep >= self.timesteps
 
-        reward = -5
+        reward = -2
         if not inbounds:
             reward += -10
 
@@ -109,11 +109,11 @@ class quadEnv(gym.Env):
             reward += -0.5*angle_speed_control
 
         if pos_control:
-            reward += 5
+            reward += 10
             if speed_control:
                 reward += 10
         # else:
-        reward += 15*(np.exp(-self.distance/self.initdistance) -
+        reward += 12*(np.exp(-self.distance/self.initdistance) -
                       np.exp(-1))/(1-np.exp(-1))
 
         # reward = 2*np.exp(-self.distance/self.initdistance)
@@ -200,9 +200,9 @@ if __name__ == '__main__':
         env = make_vec_env(quadEnv, n_envs=n_cpu)
         # model = PPO("MlpPolicy", env, verbose=2,
         #             learning_rate=1e-4, n_steps=int(4096/n_cpu))
-        model = PPO.load("hello2.zip", env=env, learning_rate=3e-4)
+        model = PPO.load("hello.zip", env=env, learning_rate=3e-4)
         model.learn(total_timesteps=1e6)
-        model.save("hello2.zip")
+        model.save("hello.zip")
     else:
         model = PPO.load("hello.zip")
 

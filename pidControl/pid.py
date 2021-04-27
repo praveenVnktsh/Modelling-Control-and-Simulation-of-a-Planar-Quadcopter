@@ -39,7 +39,7 @@ class PID():
         else:
             self.completeindex = 0
 
-        if self.completeindex == 100:
+        if self.completeindex == 500:
             complete = True
 
         return phi, complete

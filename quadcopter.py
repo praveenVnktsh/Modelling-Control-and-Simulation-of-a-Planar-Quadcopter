@@ -5,20 +5,28 @@ import matplotlib.pyplot as plt
 
 g = 9.81
 
+
 class State():
 
-    def __init__(self, state = np.zeros(6)):
+    def __init__(self, state=np.zeros(12)):
+
         self.x = state[0]
-        self.y = state[1]
-        self.theta = state[2]
+        self.y = state[2]
+        self.theta = state[7]
         self.xdot = state[3]
-        self.ydot = state[4]
-        self.thetadot = state[5]
+        self.ydot = state[5]
+        self.thetadot = state[10]
+
+    def getpos(self):
+        return np.array([self.x, self.y])
+
+    def getstate(self):
+        return np.array([self.x, self.y, self.theta, self.xdot, self.ydot, self.thetadot])
 
 
 class Quadcopter():
 
-    def __init__(self, state=np.zeros(12)):
+    def __init__(self):
         I = 2.5e-4
 
         self.ode = scipy.integrate.ode(self.state_dot).set_integrator(
@@ -32,7 +40,7 @@ class Quadcopter():
         self.invI = np.linalg.inv(self.I)
         self.M = 0.18
         self.L = 0.086
-        self.state = state
+        self.state = np.zeros(12)
         self.thrust = 0
         self.tau = 0
 
@@ -66,9 +74,9 @@ class Quadcopter():
         state_dot[5] = x_dotdot[2]
 
         # The angular rates(t+1 theta_dots equal the t theta_dots)
-        state_dot[6] = 0*self.state[9]
+        state_dot[6] = self.state[9]
         state_dot[7] = self.state[10]
-        state_dot[8] = 0*self.state[11]
+        state_dot[8] = self.state[11]
 
         # The angular accelerations
         omega = self.state[9:12]
@@ -76,9 +84,9 @@ class Quadcopter():
 
         omega_dot = np.dot(
             self.invI, (tau - np.cross(omega, np.dot(self.I, omega))))
-        state_dot[9] = 0*omega_dot[0]
+        state_dot[9] = omega_dot[0]
         state_dot[10] = omega_dot[1]
-        state_dot[11] = 0*omega_dot[2]
+        state_dot[11] = omega_dot[2]
         return state_dot
 
     def wrap_angle(self, val):
@@ -95,17 +103,17 @@ class Quadcopter():
             print(f"Current Px:{self.state[0]:2f} Pz:{self.state[2]:2f}",
                   f"Current Vx:{self.state[3]:2f} Vz:{self.state[5]:2f}",
                   f"Angle:{self.state[7]:2f}", f"Angle rate:{self.state[10]:2f}", )
-        state = np.array(
-            [
-                self.state[0], 
-                self.state[2], 
-                self.state[7],
-                self.state[3], 
-                self.state[5], 
-                self.state[10]
-            ]
-        )
-        return State(state)
+        # state = np.array(
+        #     [
+        #         self.state[0],
+        #         self.state[2],
+        #         self.state[7],
+        #         self.state[3],
+        #         self.state[5],
+        #         self.state[10]
+        #     ]
+        # )
+        return State(self.state)
 
 
 if __name__ == "__main__":
