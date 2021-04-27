@@ -60,8 +60,7 @@ class Quadcopter():
         state_dot[2] = self.state[5]
 
         # The acceleration
-        x_dotdot = np.array([0, 0, -g]) + np.dot(self.rotation_matrix(
-            self.state[6:9]), np.array([0, 0, self.thrust]))/self.M
+        x_dotdot = np.array([0, 0, -g]) + np.dot(self.rotation_matrix(self.state[6:9]), np.array([0, 0, self.thrust]))/self.M
         state_dot[3] = x_dotdot[0]
         state_dot[4] = x_dotdot[1]
         state_dot[5] = x_dotdot[2]
