@@ -112,11 +112,8 @@ class quadEnv(gym.Env):
             reward += 10
             if speed_control:
                 reward += 10
-        # else:
         reward += 12*(np.exp(-self.distance/self.initdistance) -
                       np.exp(-1))/(1-np.exp(-1))
-
-        # reward = 2*np.exp(-self.distance/self.initdistance)
 
         return reward, done
 
@@ -146,7 +143,6 @@ class quadEnv(gym.Env):
             f"Error:{self.distance:2f},T:{self.quad.state[6:9]}]")
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
-        # plt.pause(0.001)
 
     def step(self, action):
         Thrust = action[0]
@@ -156,9 +152,7 @@ class quadEnv(gym.Env):
         MIN_tau, MAX_tau = -0.5, 0.5
 
         Thrust = (Thrust + 1)*(MAX_thrust-MIN_thrust)/2 + MIN_thrust
-
         Tau = (Tau + 1)*(MAX_tau-MIN_tau)/2 + MIN_tau
-        # print(Thrust, Tau)
 
         self.quad.thrust = Thrust
         self.quad.tau = Tau
@@ -168,15 +162,7 @@ class quadEnv(gym.Env):
 
         obs = self.getobs(state)
         reward, done = self.cal_reward(state)
-        # done, inbounds, pos = self.is_done()
-        # if not inbounds:
-        #     reward = -50
-        # elif done:
-        #     reward = 100
-        # elif pos:
-        #     reward = 5
-        # else:
-        #     reward = -1
+
         info = {
             "states": self.quad.state,
             "distance": self.distance,
@@ -191,20 +177,19 @@ class quadEnv(gym.Env):
 
 if __name__ == '__main__':
     env = quadEnv(render=True)
-    # print("Current Error:", env.reset())
     train = 0
     check = False
 
     if train:
         n_cpu = 8
         env = make_vec_env(quadEnv, n_envs=n_cpu)
-        # model = PPO("MlpPolicy", env, verbose=2,
-        #             learning_rate=1e-4, n_steps=int(4096/n_cpu))
-        model = PPO.load("hello.zip", env=env, learning_rate=3e-4)
+        model = PPO("MlpPolicy", env, verbose=2,
+                    learning_rate=1e-4, n_steps=int(4096/n_cpu))
         model.learn(total_timesteps=1e6)
-        model.save("hello.zip")
+        model.save("model.zip")
     else:
-        model = PPO.load("hello.zip")
+        model = PPO.load(r"goodmodels\bestilnow.zip")
+        # model = PPO.load(r"model.zip")
 
         while(True):
             obs = env.reset()
@@ -232,10 +217,8 @@ if __name__ == '__main__':
                             break
 
                         print(t, action)
-                    # continue
 
                 actions.append(action)
-                # print(action)
                 obs, _, done, _ = env.step(action)
                 if msvcrt.kbhit():
                     t = msvcrt.getch()
