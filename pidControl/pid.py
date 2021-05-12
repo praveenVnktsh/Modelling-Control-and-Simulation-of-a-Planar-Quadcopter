@@ -8,7 +8,10 @@ class PID():
         self.Kd = Kd
         self.preverror = np.array([0, 0], dtype= float)
         self.prevphi = istate.theta
+        self.completeindex = 0
 
+    def __str__(self):
+        return str((self.Kp, self.Kd))
     def setSetpoint(self, setpoint):
         self.setpoint = setpoint
 
@@ -25,21 +28,25 @@ class PID():
         phiError = (phi - state.theta)
 
         phiErrorDot = (phi - self.prevphi)/dt - state.thetadot
-
         quad.tau = self.Kp[2] * phiError + self.Kd[2] * phiErrorDot
+        
+        # print(quad.tau)
+        # exit()
 
 
         self.prevphi = phi
 
 
         complete = False
-
-        if abs(yerror) + abs(xerror) < 0.05:
+        toterror = abs(yerror) + abs(xerror)
+        if toterror < 0.05:
             self.completeindex += 1
         else:
             self.completeindex = 0
 
-        if self.completeindex == 500:
+        if self.completeindex == 500 :
             complete = True
+
+        
 
         return phi, complete

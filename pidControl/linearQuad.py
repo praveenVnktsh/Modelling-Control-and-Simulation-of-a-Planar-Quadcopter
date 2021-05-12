@@ -62,8 +62,8 @@ class Quadcopter():
 
         state = self.state 
 
-        x_dotdot = -self.thrust * math.sin(state.theta)/self.M
-        y_dotdot = -g + (self.thrust * math.cos(state.theta) / self.M)
+        x_dotdot = -g*state.theta
+        y_dotdot = -g + (self.thrust/ self.M)
         theta_dotdot = self.tau/self.I
 
 
